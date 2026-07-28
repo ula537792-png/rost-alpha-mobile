@@ -43,7 +43,7 @@ local Settings = {
         Ores = false, Stone = false, Sulfur = false, Iron = false,
         NPCs = false, Hemp = false, 
         VisibleCrate = false, Crate = false, FoodBox = false, MilitaryCrate = false, ToolBox = false, EliteCrate = false, Airdrop = false,
-        Aimbot = false, AutoShoot = false, ShowFOV = false,
+        Aimbot = false, ShowFOV = false,
         Prediction = false,
         Box = false, Chams = false, Name = false, HealthBar = false, HPText = false, Distance = false,
         OffscreenArrows = false,
@@ -51,6 +51,7 @@ local Settings = {
         FullBright = false, Spider = false, SpeedHack = false, BulletTracers = false,
         infJump = false, EnableFOV = false, FreeCam = false, Fly = false
     },
+    AimTriggerMode = "Automatically", -- Варианты: "Automatically", "Button"
     AutoShootActive = false,
     SpiderActive = false,
     SpeedHackActive = false,
@@ -163,7 +164,7 @@ end
 updateUIScale()
 camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateUIScale)
 
--- === ПЕРЕТАСКИВАЕМАЯ КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ МЕНЮ (МЕНЕЕ КОНТРАСТНАЯ) ===
+-- === ПЕРЕТАСКИВАЕМАЯ КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ МЕНЮ ===
 local toggleMenuBtn = Instance.new("TextButton", screenGui)
 toggleMenuBtn.Size = UDim2.new(0, 100, 0, 40)
 toggleMenuBtn.Position = UDim2.new(0, 20, 0, 20)
@@ -179,7 +180,6 @@ toggleStroke.Color = Color3.fromRGB(100, 70, 140)
 toggleStroke.Transparency = 0.4
 toggleStroke.Thickness = 1
 
--- Логика перетаскивания кнопки без блокировки клика
 local draggingToggle, dragInputToggle, dragStartToggle, startPosToggle
 toggleMenuBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -207,7 +207,116 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- === ИНДИКАТОРЫ СОСТОЯНИЙ В ЛЕВОМ ВЕРХНЕМ УГЛУ (ВМЕСТО БИНДОВ) ===
+-- === СТИЛЬНАЯ ПЕРЕТАСКИВАЕМАЯ КНОПКА СБРОСА/ОБНОВЛЕНИЯ АИМА НА ЭКРАНЕ ===
+local lockedTarget = nil
+
+local resetAimBtn = Instance.new("TextButton", screenGui)
+resetAimBtn.Size = UDim2.new(0, 110, 0, 36)
+resetAimBtn.Position = UDim2.new(0.5, -55, 0, 20)
+resetAimBtn.BackgroundColor3 = Color3.fromRGB(20, 17, 28)
+resetAimBtn.TextColor3 = Color3.fromRGB(200, 160, 240)
+resetAimBtn.Text = "Reset Aim"
+resetAimBtn.Font = Enum.Font.FredokaOne
+resetAimBtn.TextSize = 14
+resetAimBtn.ZIndex = 100
+Instance.new("UICorner", resetAimBtn).CornerRadius = UDim.new(0, 8)
+local resetAimStroke = Instance.new("UIStroke", resetAimBtn)
+resetAimStroke.Color = Color3.fromRGB(120, 80, 160)
+resetAimStroke.Transparency = 0.4
+resetAimStroke.Thickness = 1
+
+resetAimBtn.MouseButton1Click:Connect(function()
+    lockedTarget = nil
+end)
+
+local draggingReset, dragInputReset, dragStartReset, startPosReset
+resetAimBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingReset = true
+        dragStartReset = input.Position
+        startPosReset = resetAimBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingReset = false
+            end
+        end)
+    end
+end)
+
+resetAimBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInputReset = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInputReset and draggingReset then
+        local delta = input.Position - dragStartReset
+        resetAimBtn.Position = UDim2.new(startPosReset.X.Scale, startPosReset.X.Offset + delta.X, startPosReset.Y.Scale, startPosReset.Y.Offset + delta.Y)
+    end
+end)
+
+-- === СТИЛЬНАЯ ЭКРАННАЯ КНОПКА АКТИВАЦИИ АИМА (ДЛЯ РЕЖИМА "Button") ===
+local aimButtonActive = false
+local screenAimBtn = Instance.new("TextButton", screenGui)
+screenAimBtn.Size = UDim2.new(0, 120, 0, 42)
+screenAimBtn.Position = UDim2.new(0.5, -60, 0.8, 0)
+screenAimBtn.BackgroundColor3 = Color3.fromRGB(20, 17, 28)
+screenAimBtn.TextColor3 = Color3.fromRGB(150, 60, 220)
+screenAimBtn.Text = "AIM: OFF"
+screenAimBtn.Font = Enum.Font.FredokaOne
+screenAimBtn.TextSize = 14
+screenAimBtn.Visible = false
+screenAimBtn.ZIndex = 100
+Instance.new("UICorner", screenAimBtn).CornerRadius = UDim.new(0, 8)
+local screenAimStroke = Instance.new("UIStroke", screenAimBtn)
+screenAimStroke.Color = Color3.fromRGB(150, 60, 220)
+screenAimStroke.Transparency = 0.4
+screenAimStroke.Thickness = 1.5
+
+screenAimBtn.MouseButton1Click:Connect(function()
+    aimButtonActive = not aimButtonActive
+    if aimButtonActive then
+        screenAimBtn.TextColor3 = Color3.fromRGB(0, 255, 120)
+        screenAimBtn.Text = "AIM: ON"
+        screenAimStroke.Color = Color3.fromRGB(0, 255, 120)
+    else
+        screenAimBtn.TextColor3 = Color3.fromRGB(150, 60, 220)
+        screenAimBtn.Text = "AIM: OFF"
+        screenAimStroke.Color = Color3.fromRGB(150, 60, 220)
+        lockedTarget = nil
+    end
+end)
+
+-- Перетаскивание экранной кнопки аима
+local draggingAimBtn, dragInputAimBtn, dragStartAimBtn, startPosAimBtn
+screenAimBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingAimBtn = true
+        dragStartAimBtn = input.Position
+        startPosAimBtn = screenAimBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingAimBtn = false
+            end
+        end)
+    end
+end)
+
+screenAimBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInputAimBtn = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInputAimBtn and draggingAimBtn then
+        local delta = input.Position - dragStartAimBtn
+        screenAimBtn.Position = UDim2.new(startPosAimBtn.X.Scale, startPosAimBtn.X.Offset + delta.X, startPosAimBtn.Y.Scale, startPosAimBtn.Y.Offset + delta.Y)
+    end
+end)
+
+-- === ИНДИКАТОРЫ СОСТОЯНИЙ В ЛЕВОМ ВЕРХНЕМ УГЛУ ===
 local statusContainer = Instance.new("Frame", screenGui)
 statusContainer.Name = "StatusContainer"
 statusContainer.Size = UDim2.new(0, 200, 0, 200)
@@ -231,7 +340,6 @@ local function createStatusIndicator(keyName, displayName)
     statusLabels[keyName] = {Label = label, Name = displayName}
 end
 
-createStatusIndicator("AutoShootActive", "Auto Shoot")
 createStatusIndicator("WallCheckActive", "Wall Check")
 createStatusIndicator("SpiderActive", "Spider")
 createStatusIndicator("SpeedHackActive", "SpeedHack")
@@ -339,10 +447,12 @@ end
 local uiCorner = Instance.new("UICorner", mainFrame)
 uiCorner.CornerRadius = UDim.new(0, 12)
 
+-- === ФОВ КРУГ СТРОГО ПО ЦЕНТРУ ЭКРАНА ===
 local fovCircle = Instance.new("Frame", screenGui)
 fovCircle.Name = "FOVCircle"
 fovCircle.Size = UDim2.new(0, Settings.AimbotFOV * 2, 0, Settings.AimbotFOV * 2)
-fovCircle.Position = UDim2.new(0.5, -Settings.AimbotFOV, 0.5, -Settings.AimbotFOV)
+fovCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
+fovCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 fovCircle.BackgroundTransparency = 1
 fovCircle.Visible = false
 fovCircle.ZIndex = 10
@@ -431,7 +541,7 @@ local function createCheckbox(name, parent, settingKey)
     local label = Instance.new("TextLabel", container)
     label.Size = UDim2.new(1, -30, 1, 0)
     label.Position = UDim2.new(0, 25, 0, 0)
-    label.Text = "Enable " .. name
+    label.Text = name
     label.TextColor3 = UI_COLORS.TEXT
     label.Font = Enum.Font.FredokaOne
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -521,13 +631,12 @@ local function createSlider(name, parent, min, max, settingKey)
             label.Text = name .. ": " .. (settingKey == "Smoothing" and string.format("%.2f", Settings[settingKey]) or Settings[settingKey])
             if settingKey == "AimbotFOV" then
                 fovCircle.Size = UDim2.new(0, Settings.AimbotFOV * 2, 0, Settings.AimbotFOV * 2)
-                fovCircle.Position = UDim2.new(0.5, -Settings.AimbotFOV, 0.5, -Settings.AimbotFOV)
             end
         end
     end)
 end
 
-local function createDropdown(name, parent, options, settingKey)
+local function createDropdown(name, parent, options, settingKey, callback)
     local btn = Instance.new("TextButton", parent)
     btn.Size = UDim2.new(1, -20, 0, 30)
     btn.Text = name .. ": " .. Settings[settingKey]
@@ -544,16 +653,28 @@ local function createDropdown(name, parent, options, settingKey)
         index = (index % #options) + 1
         Settings[settingKey] = options[index]
         btn.Text = name .. ": " .. Settings[settingKey]
+        if callback then callback(Settings[settingKey]) end
     end)
 end
 
 local combatContent = tabContents["Combat"]
 createCheckbox("Aimbot", combatContent, "Aimbot")
+
+createDropdown("Aim Trigger", combatContent, {"Automatically", "Button"}, "AimTriggerMode", function(selectedMode)
+    if selectedMode == "Automatically" then
+        screenAimBtn.Visible = false
+        aimButtonActive = false
+        screenAimBtn.TextColor3 = Color3.fromRGB(150, 60, 220)
+        screenAimBtn.Text = "AIM: OFF"
+        screenAimStroke.Color = Color3.fromRGB(150, 60, 220)
+    else
+        screenAimBtn.Visible = true
+    end
+end)
+
 createSlider("Smoothing", combatContent, 0.01, 1, "Smoothing")
-createCheckbox("Auto Shoot", combatContent, "AutoShoot")
 createCheckbox("Prediction", combatContent, "Prediction")
 createDropdown("Aim Part", combatContent, {"Head", "HumanoidRootPart", "Torso"}, "AimPart")
-createActivationButton(combatContent, "AutoShoot Active", "AutoShootActive")
 createActivationButton(combatContent, "WallCheck Active", "WallCheckActive")
 createCheckbox("Show FOV", combatContent, "ShowFOV")
 createSlider("FOV Radius", combatContent, 10, 500, "AimbotFOV")
@@ -650,7 +771,6 @@ end)
 
 local lastShootTime = 0
 local mouse = player:GetMouse()
-local lockedTarget = nil
 
 local espData = {}
 local offscreenIndicators = {}
@@ -679,11 +799,6 @@ RunService.RenderStepped:Connect(function(dt)
 
     if Settings.Enabled.EnableFOV then
         camera.FieldOfView = Settings.CameraFOV
-    end
-
-    if Settings.Enabled.AutoShoot and Settings.AutoShootActive and lockedTarget and lockedTarget.Character then
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
     end
 
     if Settings.Enabled.BulletTracers and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
@@ -742,20 +857,40 @@ RunService.RenderStepped:Connect(function(dt)
     end
 
     local targetCheckActive = Settings.Enabled.Aimbot
-    local inputPressed = Settings.AutoShootActive or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
+    local triggerAllowed = false
 
-    if targetCheckActive and inputPressed then
-        if not lockedTarget or not lockedTarget.Character or not lockedTarget.Character:FindFirstChild("Humanoid") or lockedTarget.Character.Humanoid.Health <= 0 then
+    if targetCheckActive then
+        if Settings.AimTriggerMode == "Automatically" then
+            triggerAllowed = true
+        elseif Settings.AimTriggerMode == "Button" then
+            triggerAllowed = aimButtonActive
+        end
+    end
+
+    if targetCheckActive and triggerAllowed then
+        if lockedTarget and lockedTarget.Character then
+            local hum = lockedTarget.Character:FindFirstChildOfClass("Humanoid")
+            if not hum or hum.Health <= 0 or not lockedTarget.Character:FindFirstChild("HumanoidRootPart") then
+                lockedTarget = nil
+            end
+        else
+            lockedTarget = nil
+        end
+
+        if not lockedTarget then
             local closest = nil
             local minScore = math.huge
-            local mouseLoc = UserInputService:GetMouseLocation()
+            local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+
             for _, p in pairs(Players:GetPlayers()) do
-                if p ~= player and p.Character and getTargetPart(p.Character) and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                if p ~= player and p.Character and getTargetPart(p.Character) and p.Character:FindFirstChildOfClass("Humanoid") and p.Character.Humanoid.Health > 0 then
+                    local targetPartRef = getTargetPart(p.Character)
                     local targetPos = getPrediction(p.Character)
                     local pos, onScreen = camera:WorldToViewportPoint(targetPos)
-                    local fovDist = (Vector2.new(pos.X, pos.Y) - mouseLoc).Magnitude
+                    local fovDist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
                     local worldDist = (targetPos - camera.CFrame.Position).Magnitude
-                    if onScreen and pos.Z > 0 and fovDist < Settings.AimbotFOV and fovDist <= Settings.AimbotRange and isVisible(getTargetPart(p.Character)) then
+                    
+                    if onScreen and pos.Z > 0 and fovDist < Settings.AimbotFOV and fovDist <= Settings.AimbotRange and isVisible(targetPartRef) then
                         local score = fovDist * 0.4 + worldDist * 0.6
                         if score < minScore then minScore = score; closest = p end
                     end
@@ -763,15 +898,16 @@ RunService.RenderStepped:Connect(function(dt)
             end
             lockedTarget = closest
         end
+
         if lockedTarget and lockedTarget.Character then
             local targetPos = getPrediction(lockedTarget.Character)
-            if Settings.Enabled.Aimbot then
-                local targetCF = CFrame.new(camera.CFrame.Position, targetPos)
-                camera.CFrame = camera.CFrame:Lerp(targetCF, Settings.Smoothing)
-            end
+            local targetCF = CFrame.new(camera.CFrame.Position, targetPos)
+            camera.CFrame = camera.CFrame:Lerp(targetCF, Settings.Smoothing)
         end
     else
-        lockedTarget = nil
+        if Settings.AimTriggerMode == "Automatically" then
+            lockedTarget = nil
+        end
     end
 end)
 
