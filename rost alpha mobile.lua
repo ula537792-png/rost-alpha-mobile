@@ -151,7 +151,6 @@ screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.Parent = CoreGui
 
--- === АДАПТИВНОСТЬ ПОД ЛЮБЫЕ УСТРОЙСТВА (UI_SCALE) ===
 local uiScale = Instance.new("UIScale", screenGui)
 local function updateUIScale()
     local viewportSize = camera.ViewportSize
@@ -164,7 +163,6 @@ end
 updateUIScale()
 camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateUIScale)
 
--- === ПЕРЕТАСКИВАЕМАЯ КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ МЕНЮ ===
 local toggleMenuBtn = Instance.new("TextButton", screenGui)
 toggleMenuBtn.Size = UDim2.new(0, 100, 0, 40)
 toggleMenuBtn.Position = UDim2.new(0, 20, 0, 20)
@@ -207,7 +205,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- === СТИЛЬНАЯ ПЕРЕТАСКИВАЕМАЯ КНОПКА СБРОСА/ОБНОВЛЕНИЯ АИМА НА ЭКРАНЕ ===
 local lockedTarget = nil
 
 local resetAimBtn = Instance.new("TextButton", screenGui)
@@ -256,7 +253,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- === СТИЛЬНАЯ ЭКРАННАЯ КНОПКА АКТИВАЦИИ АИМА (ДЛЯ РЕЖИМА "Button") ===
 local aimButtonActive = false
 local screenAimBtn = Instance.new("TextButton", screenGui)
 screenAimBtn.Size = UDim2.new(0, 120, 0, 42)
@@ -288,7 +284,6 @@ screenAimBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Перетаскивание экранной кнопки аима
 local draggingAimBtn, dragInputAimBtn, dragStartAimBtn, startPosAimBtn
 screenAimBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -316,7 +311,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- === ИНДИКАТОРЫ СОСТОЯНИЙ В ЛЕВОМ ВЕРХНЕМ УГЛУ ===
 local statusContainer = Instance.new("Frame", screenGui)
 statusContainer.Name = "StatusContainer"
 statusContainer.Size = UDim2.new(0, 200, 0, 200)
@@ -355,7 +349,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- === ВСТУПИТЕЛЬНАЯ ЗАСТАВКА (WELCOME TO INVERIUM) ===
 local welcomeFrame = Instance.new("Frame", screenGui)
 welcomeFrame.Size = UDim2.new(0, 350, 0, 100)
 welcomeFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -382,7 +375,6 @@ welcomeText.BackgroundTransparency = 1
 welcomeText.TextTransparency = 1
 welcomeText.ZIndex = 6
 
--- === ГЛАВНОЕ МЕНЮ С ФИКСИРОВАННЫМ РАЗМЕРОМ ПО ЦЕНТРУ ===
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Size = UDim2.new(0, 700, 0, 500)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -404,7 +396,6 @@ mainStroke.Color = UI_COLORS.TAB_ACTIVE
 mainStroke.Transparency = 1
 mainStroke.Thickness = 1.5
 
--- === КОНТЕЙНЕР ДЛЯ ФОНОВЫХ ЧАСТИЦ ===
 local bgContainer = Instance.new("Frame", mainFrame)
 bgContainer.Size = UDim2.new(1, 0, 1, 0)
 bgContainer.BackgroundTransparency = 1
@@ -447,7 +438,6 @@ end
 local uiCorner = Instance.new("UICorner", mainFrame)
 uiCorner.CornerRadius = UDim.new(0, 12)
 
--- === ФОВ КРУГ СТРОГО ПО ЦЕНТРУ ЭКРАНА ===
 local fovCircle = Instance.new("Frame", screenGui)
 fovCircle.Name = "FOVCircle"
 fovCircle.Size = UDim2.new(0, Settings.AimbotFOV * 2, 0, Settings.AimbotFOV * 2)
@@ -743,7 +733,6 @@ createCheckbox("Fly", miscContent, "Fly")
 createSlider("Fly Speed", miscContent, 10, 200, "FlySpeed")
 createActivationButton(miscContent, "Fly Active", "FlyActive")
 
--- === ПОСЛЕДОВАТЕЛЬНОСТЬ АНИМАЦИИ ЗАПУСКА ===
 task.spawn(function()
     local introInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     
